@@ -1,3 +1,3 @@
-Detekcija za videa ni baš precizna. Pogađa na momente, ali daje previše no sunglasses, čak i ako ih imamo odnosno sunglasses, čak i ako ih nemamo. Treba malo poštimat parametre u treniranju  (model training.py)
+Detekcija za videa ni baš precizna. Pogađa na momente, ali daje previše no sunglasses, čak i ako ih imamo, odnosno sunglasses, čak i ako ih nemamo. Treba malo poštimat parametre u treniranju  (model training.py)
 
 Image test je OK
