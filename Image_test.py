@@ -23,6 +23,6 @@ def predict_image(image_path):
     return label
 
 # Sample usage
-image_path = '/content/41d4c0300569bee094df.jpg'
+image_path = '/WIN_20240725_13_52_07_Pro.jpg'
 label = predict_image(image_path)
 print(f'The person in the image is: {label}')
