@@ -44,44 +44,63 @@ def split_data(source_dir, train_dir, val_dir, split_ratio=0.2):
 split_data(plain_path, plain_train_dir, plain_val_dir)
 split_data(sunglasses_path, sunglasses_train_dir, sunglasses_val_dir)
 
-# Data Preparation
-datagen = ImageDataGenerator(rescale=1./255)
+# Data Preparation with Augmentation
+train_datagen = ImageDataGenerator(
+    rescale=1./255,
+    rotation_range=40,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True,
+    fill_mode='nearest'
+)
 
-train_gen = datagen.flow_from_directory(
+train_gen = train_datagen.flow_from_directory(
     train_dir,
     target_size=(64, 64),
     batch_size=32,
     class_mode='binary'
 )
 
-val_gen = datagen.flow_from_directory(
+val_datagen = ImageDataGenerator(rescale=1./255)
+
+val_gen = val_datagen.flow_from_directory(
     val_dir,
     target_size=(64, 64),
     batch_size=32,
     class_mode='binary'
 )
 
-# Model Definition
+# Model Definition using Transfer Learning (VGG16)
+base_model = tf.keras.applications.VGG16(input_shape=(64, 64, 3),
+                                         include_top=False,
+                                         weights='imagenet')
+
+base_model.trainable = False
+
 model = tf.keras.models.Sequential([
-    tf.keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(64, 64, 3)),
-    tf.keras.layers.MaxPooling2D((2, 2)),
-    tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
-    tf.keras.layers.MaxPooling2D((2, 2)),
-    tf.keras.layers.Conv2D(128, (3, 3), activation='relu'),
-    tf.keras.layers.MaxPooling2D((2, 2)),
+    base_model,
     tf.keras.layers.Flatten(),
-    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dense(512, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.01)),
     tf.keras.layers.Dropout(0.5),
     tf.keras.layers.Dense(1, activation='sigmoid')
 ])
 
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
+# Callbacks for learning rate scheduling and early stopping
+from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping
+
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=5, min_lr=0.00001)
+early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+
 # Model Training
 history = model.fit(
     train_gen,
-    epochs=20,
-    validation_data=val_gen
+    epochs=100,
+    validation_data=val_gen,
+    callbacks=[reduce_lr, early_stopping]
 )
 
 # Save the model
